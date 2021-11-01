@@ -44,6 +44,11 @@ You can specify the following command-line arguments:
 | `timeout`   | `-t`  | Integer       | Specifies the connection timeout (in milliseconds) before a port is marked as closed |
 | `noclosed`  | `-n`  | TRUE \| FALSE | Specifies whether closed ports should be outputted or not                            |
 
+It is important to note that using more threads does not automatically improve performance.
+
+In terms of performance; when you have specified to use more threads than there are ports to scan, `rscan` will automatically lower the amount of threads it uses to be equal to the total amount of ports
+that need to be scanned.
+
 ### Example usage
 
 If you want to scan only a single port, you could use something like:

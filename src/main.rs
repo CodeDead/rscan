@@ -1,6 +1,6 @@
+use std::time::Duration;
 use std::net::{Shutdown, ToSocketAddrs};
 use std::net::TcpStream;
-use std::time::Duration;
 use std::thread;
 use std::sync::{Arc, Mutex};
 use clap::{Arg, App};
@@ -92,7 +92,7 @@ fn main() {
         let remainder = (u32::from(total_ports) % threads) as u16;
 
         let mut current_start = start_port;
-        let mut current_end = range -1;
+        let mut current_end = range - 1;
 
         let mut handles = vec![];
         for n in 0..threads {
@@ -102,8 +102,8 @@ fn main() {
 
             let all_results = Arc::clone(&all_results);
             let handle = thread::spawn(move || {
-                let mut results = all_results.lock().unwrap();
                 let res = scan_range(&local_host, local_start, local_end, timeout);
+                let mut results = all_results.lock().unwrap();
                 for l in res {
                     results.push(l);
                 }
@@ -122,8 +122,9 @@ fn main() {
         }
     } else {
         let res = scan_range(host, start_port, end_port, timeout);
+        let mut all = all_results.lock().unwrap();
         for l in res {
-            all_results.lock().unwrap().push(l);
+            all.push(l);
         }
     }
 
