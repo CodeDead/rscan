@@ -20,10 +20,45 @@ cargo build --release
 
 ## Running
 
-To run `rscan`, issue the following command:
+To run `rscan` using `cargo`, issue the following command:
 
 ```shell
 cargo run
+```
+
+To run `rscan` from your terminal, issue the following command:
+```shell
+./rscan [OPTIONS]
+```
+
+### Arguments
+
+You can specify the following command-line arguments:
+
+| Command     | Short | Value         | Description                                                                          |
+|-------------|-------|---------------|--------------------------------------------------------------------------------------|
+| `threads`   | `-c`  | Integer value | Specifies the number of threads to use                                               |
+| `host`      | `-h`  | String        | Specifies the host (or IP address) that needs to be scanned                          |
+| `startport` | `-s`  | 0-65535       | Specifies the initial port that needs to be scanned                                  |
+| `endport`   | `-e`  | 0-65535       | Specifies the last port that needs to be scanned                                     |
+| `timeout`   | `-t`  | Integer       | Specifies the connection timeout (in milliseconds) before a port is marked as closed |
+| `noclosed`  | `-n`  | TRUE \| FALSE | Specifies whether closed ports should be outputted or not                            |
+
+### Example usage
+
+If you want to scan only a single port, you could use something like:
+```shell
+./rscan -h 127.0.0.1 -s 80 -e 80
+```
+
+If no start port is provided, `rscan` will simply start from the smallest port number and will scan until the end port is reached:
+```shell
+./rscan -h 127.0.0.1 -e 80
+```
+
+Likewise, if no end port is provided, `rscan` will scan from the start port until the largest port number (`65535`):
+```shell
+./rscan -h 127.0.0.1 -s 65530
 ```
 
 ## Dependencies
