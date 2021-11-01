@@ -35,14 +35,16 @@ To run `rscan` from your terminal, issue the following command:
 
 You can specify the following command-line arguments:
 
-| Command     | Short | Value         | Description                                                                          |
-|-------------|-------|---------------|--------------------------------------------------------------------------------------|
-| `threads`   | `-c`  | Integer value | Specifies the number of threads to use                                               |
-| `host`      | `-h`  | String        | Specifies the host (or IP address) that needs to be scanned                          |
-| `startport` | `-s`  | 0-65535       | Specifies the initial port that needs to be scanned                                  |
-| `endport`   | `-e`  | 0-65535       | Specifies the last port that needs to be scanned                                     |
-| `timeout`   | `-t`  | Integer       | Specifies the connection timeout (in milliseconds) before a port is marked as closed |
-| `noclosed`  | `-n`  | TRUE \| FALSE | Specifies whether closed ports should be outputted or not                            |
+| Command       | short | Value         | Description                                                                                                     |
+|---------------|-------|---------------|-----------------------------------------------------------------------------------------------------------------|
+| `threads`     | `-c`  | Integer value | Specifies the number of threads to use                                                                          |
+| `host`        | `-h`  | String        | Specifies the host (or IP address) that needs to be scanned                                                     |
+| `startport`   | `-s`  | 0-65535       | Specifies the initial port that needs to be scanned                                                             |
+| `endport`     | `-e`  | 0-65535       | Specifies the last port that needs to be scanned                                                                |
+| `timeout`     | `-t`  | Integer       | Specifies the connection timeout (in milliseconds) before a port is marked as closed                            |
+| `noclosed`    | `-n`  | TRUE / FALSE  | Specifies whether closed ports should be outputted or not                                                       |
+| `sort`        | `-o`  | TRUE / FALSE  | Specifies whether the output should be sorted by port number or not                                             |
+| `interactive` | `-i`  | TRUE / FALSE  | Specifies whether the output should be displayed while scanning or whether to wait until the scan has completed |
 
 It is important to note that using more threads does not automatically improve performance.
 

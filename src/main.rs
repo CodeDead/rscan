@@ -54,6 +54,20 @@ fn main() {
             .help("Sets whether closed ports should be outputted or not")
             .required(false)
             .takes_value(true))
+        .arg(Arg::with_name("sort")
+            .short("o")
+            .long("sort")
+            .value_name("TRUE|FALSE")
+            .help("Sets whether the output should be sorted by port number or not")
+            .required(false)
+            .takes_value(true))
+        .arg(Arg::with_name("interactive")
+            .short("i")
+            .long("interactive")
+            .value_name("TRUE|FALSE")
+            .help("Sets whether the output should be displayed while scanning or whether to wait until the scan has completed")
+            .required(false)
+            .takes_value(true))
         .get_matches();
 
     let host = matches.value_of("host").expect("Host is a required parameter!");
@@ -63,6 +77,8 @@ fn main() {
     let mut end_port: u16 = matches.value_of("endport").unwrap_or("0").parse().expect("End port is not a valid port number!");
     let timeout: u64 = matches.value_of("timeout").unwrap_or("500").parse().expect("Timeout is not a valid integer!");
     let no_closed: bool = matches.value_of("noclosed").unwrap_or("false").parse().expect("No closed argument can only be true or false!");
+    let sort: bool = matches.value_of("sort").unwrap_or("true").parse().expect("Sort argument can only be true or false!");
+    let interactive: bool = matches.value_of("interactive").unwrap_or("false").parse().expect("Interactive argument can only be true or false!");
 
     if start_port > end_port && end_port != 0 {
         panic!("Start port cannot be bigger than end port!");
@@ -102,7 +118,8 @@ fn main() {
 
             let all_results = Arc::clone(&all_results);
             let handle = thread::spawn(move || {
-                let res = scan_range(&local_host, local_start, local_end, timeout);
+                let res = scan_range(&local_host, local_start, local_end, timeout, interactive, no_closed);
+
                 let mut results = all_results.lock().unwrap();
                 for l in res {
                     results.push(l);
@@ -121,27 +138,40 @@ fn main() {
             handle.join().unwrap();
         }
     } else {
-        let res = scan_range(host, start_port, end_port, timeout);
+        let res = scan_range(host, start_port, end_port, timeout, interactive, no_closed);
         let mut all = all_results.lock().unwrap();
         for l in res {
             all.push(l);
         }
     }
 
-    // Sort by port
     let mut res = all_results.lock().unwrap();
-    res.sort_by(|a, b| a.port.cmp(&b.port));
 
-    for s in res.iter() {
-        match s.port_status {
-            PortStatus::Open => {
-                println!("{}:{} | {}", s.host, s.port, "OPEN");
-            }
-            PortStatus::Closed => {
-                if !no_closed {
-                    println!("{}:{} | {}", s.host, s.port, "CLOSED");
-                }
-            }
+    if sort {
+        // Sort by port number
+        res.sort_by(|a, b| a.port.cmp(&b.port));
+    }
+
+    if !interactive {
+        for s in res.iter() {
+            to_display(&s);
+        }
+    }
+}
+
+/// Print a `ScanResult` to the stdout
+///
+/// # Arguments
+///
+/// * `s` - The reference to the `ScanResult` struct
+/// * `no_closed` - Boolean that indicates whether closed ports should be printed out or not
+fn to_display(s: &ScanResult) {
+    match s.port_status {
+        PortStatus::Open => {
+            println!("{}:{} | {}", s.host, s.port, "OPEN");
+        }
+        PortStatus::Closed => {
+            println!("{}:{} | {}", s.host, s.port, "CLOSED");
         }
     }
 }
@@ -154,7 +184,9 @@ fn main() {
 /// * `start` - The initial port that needs to be scanned
 /// * `end` - The final port that needs to be scanned
 /// * `timeout` - The connection timeout (in milliseconds) before a port is marked as closed
-fn scan_range(host: &str, start: u16, end: u16, timeout: u64) -> Vec<ScanResult> {
+/// * `interactive` - Sets whether the output should be displayed while scanning or not
+/// * `no_closed` - Sets whether closed ports should be added to the return list or not
+fn scan_range(host: &str, start: u16, end: u16, timeout: u64, interactive: bool, no_closed: bool) -> Vec<ScanResult> {
     let mut scan_result = vec![];
 
     for n in start..=end {
@@ -162,14 +194,23 @@ fn scan_range(host: &str, start: u16, end: u16, timeout: u64) -> Vec<ScanResult>
         let socket_address = address.next().unwrap();
 
         if let Ok(stream) = TcpStream::connect_timeout(&socket_address, Duration::from_millis(timeout)) {
-            scan_result.push(ScanResult::new(host, n, PortStatus::Open));
+            let sr = ScanResult::new(host, n, PortStatus::Open);
+            if interactive {
+                to_display(&sr);
+            }
+            scan_result.push(sr);
+
             let res = stream.shutdown(Shutdown::Both);
             match res {
                 Ok(_) => {}
                 Err(e) => { panic!("Unable to shut down TcpStream: {}", e) }
             }
-        } else {
-            scan_result.push(ScanResult::new(host, n, PortStatus::Closed));
+        } else if !no_closed {
+            let sr = ScanResult::new(host, n, PortStatus::Closed);
+            if interactive {
+                to_display(&sr)
+            }
+            scan_result.push(sr);
         }
     }
 
