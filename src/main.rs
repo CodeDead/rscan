@@ -1,6 +1,8 @@
 use std::net::{Shutdown, ToSocketAddrs};
 use std::net::TcpStream;
 use std::time::Duration;
+use std::thread;
+use std::sync::{Arc, Mutex};
 use clap::{Arg, App};
 use crate::result::{PortStatus, ScanResult};
 
@@ -55,7 +57,8 @@ fn main() {
         .get_matches();
 
     let host = matches.value_of("host").expect("Host is a required parameter!");
-    let _threads: u32 = matches.value_of("threads").unwrap_or("1").parse().expect("Threads is not a valid integer!");
+    let host_value = String::from(host);
+    let mut threads: u32 = matches.value_of("threads").unwrap_or("1").parse().expect("Threads is not a valid integer!");
     let mut start_port: u16 = matches.value_of("startport").unwrap_or("0").parse().expect("Start port is not a port number!");
     let mut end_port: u16 = matches.value_of("endport").unwrap_or("0").parse().expect("End port is not a valid port number!");
     let timeout: u64 = matches.value_of("timeout").unwrap_or("500").parse().expect("Timeout is not a valid integer!");
@@ -74,11 +77,61 @@ fn main() {
         end_port = u16::MAX;
     }
 
-    let mut result = scan_range(host, start_port, end_port, timeout);
-    // Sort by port
-    result.sort_by(|a, b| a.port.cmp(&b.port));
+    let all_results: Arc<Mutex<Vec<ScanResult>>> = Arc::new(Mutex::new(vec![]));
+    if threads > 1 {
+        let mut total_ports = end_port - start_port;
+        if total_ports != u16::MAX {
+            total_ports += 1;
+        }
 
-    for s in result {
+        if threads > u32::from(total_ports) {
+            threads = u32::from(total_ports);
+        }
+
+        let range = (u32::from(total_ports) / threads) as u16;
+        let remainder = (u32::from(total_ports) % threads) as u16;
+
+        let mut current_start = start_port;
+        let mut current_end = range -1;
+
+        let mut handles = vec![];
+        for n in 0..threads {
+            let local_start = current_start;
+            let local_end = current_end;
+            let local_host = host_value.clone();
+
+            let all_results = Arc::clone(&all_results);
+            let handle = thread::spawn(move || {
+                let mut results = all_results.lock().unwrap();
+                let res = scan_range(&local_host, local_start, local_end, timeout);
+                for l in res {
+                    results.push(l);
+                }
+            });
+            handles.push(handle);
+
+            current_start = current_end + 1;
+            current_end += range;
+            if remainder > 0 && n == threads - 2 {
+                current_end += remainder;
+            }
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    } else {
+        let res = scan_range(host, start_port, end_port, timeout);
+        for l in res {
+            all_results.lock().unwrap().push(l);
+        }
+    }
+
+    // Sort by port
+    let mut res = all_results.lock().unwrap();
+    res.sort_by(|a, b| a.port.cmp(&b.port));
+
+    for s in res.iter() {
         match s.port_status {
             PortStatus::Open => {
                 println!("{}:{} | {}", s.host, s.port, "OPEN");
@@ -111,11 +164,11 @@ fn scan_range(host: &str, start: u16, end: u16, timeout: u64) -> Vec<ScanResult>
             scan_result.push(ScanResult::new(host, n, PortStatus::Open));
             let res = stream.shutdown(Shutdown::Both);
             match res {
-                Ok(_) => {},
-                Err(e) => {panic!("Unable to shut down TcpStream: {}", e)}
+                Ok(_) => {}
+                Err(e) => { panic!("Unable to shut down TcpStream: {}", e) }
             }
         } else {
-            scan_result.push(ScanResult::new(host,n, PortStatus::Closed));
+            scan_result.push(ScanResult::new(host, n, PortStatus::Closed));
         }
     }
 
