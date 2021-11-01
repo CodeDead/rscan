@@ -73,8 +73,8 @@ fn main() {
     let host = matches.value_of("host").expect("Host is a required parameter!");
     let host_value = String::from(host);
     let mut threads: u32 = matches.value_of("threads").unwrap_or("1").parse().expect("Threads is not a valid integer!");
-    let mut start_port: u16 = matches.value_of("startport").unwrap_or("0").parse().expect("Start port is not a port number!");
-    let mut end_port: u16 = matches.value_of("endport").unwrap_or("0").parse().expect("End port is not a valid port number!");
+    let start_port: u16 = matches.value_of("startport").unwrap_or("0").parse().expect("Start port is not a valid port number!");
+    let end_port: u16 = matches.value_of("endport").unwrap_or("65535").parse().expect("End port is not a valid port number!");
     let timeout: u64 = matches.value_of("timeout").unwrap_or("500").parse().expect("Timeout is not a valid integer!");
     let no_closed: bool = matches.value_of("noclosed").unwrap_or("false").parse().expect("No closed argument can only be true or false!");
     let sort: bool = matches.value_of("sort").unwrap_or("true").parse().expect("Sort argument can only be true or false!");
@@ -82,15 +82,6 @@ fn main() {
 
     if start_port > end_port && end_port != 0 {
         panic!("Start port cannot be bigger than end port!");
-    } else if end_port == 0 {
-        end_port = u16::MAX;
-    }
-
-    if start_port == 0 && end_port == 0 {
-        start_port = 0;
-        end_port = u16::MAX;
-    } else if start_port > 0 && end_port == 0 {
-        end_port = u16::MAX;
     }
 
     let all_results: Arc<Mutex<Vec<ScanResult>>> = Arc::new(Mutex::new(vec![]));

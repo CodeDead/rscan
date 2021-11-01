@@ -35,16 +35,18 @@ To run `rscan` from your terminal, issue the following command:
 
 You can specify the following command-line arguments:
 
-| Command       | short | Value         | Description                                                                                                     |
-|---------------|-------|---------------|-----------------------------------------------------------------------------------------------------------------|
-| `threads`     | `-c`  | Integer value | Specifies the number of threads to use                                                                          |
-| `host`        | `-h`  | String        | Specifies the host (or IP address) that needs to be scanned                                                     |
-| `startport`   | `-s`  | 0-65535       | Specifies the initial port that needs to be scanned                                                             |
-| `endport`     | `-e`  | 0-65535       | Specifies the last port that needs to be scanned                                                                |
-| `timeout`     | `-t`  | Integer       | Specifies the connection timeout (in milliseconds) before a port is marked as closed                            |
-| `noclosed`    | `-n`  | TRUE / FALSE  | Specifies whether closed ports should be outputted or not                                                       |
-| `sort`        | `-o`  | TRUE / FALSE  | Specifies whether the output should be sorted by port number or not                                             |
-| `interactive` | `-i`  | TRUE / FALSE  | Specifies whether the output should be displayed while scanning or whether to wait until the scan has completed |
+| Command       | short | Value            | Default | Description                                                                                                     |
+|---------------|-------|------------------|---------|-----------------------------------------------------------------------------------------------------------------|
+| `threads`     | `-c`  | Integer value    | `1`     | Specifies the number of threads to use                                                                          |
+| `host`*       | `-h`  | String           | `N/A`   | Specifies the host (or IP address) that needs to be scanned                                                     |
+| `startport`   | `-s`  | `0` - `65535`    | `0`     | Specifies the initial port that needs to be scanned                                                             |
+| `endport`     | `-e`  | `0` - `65535`    | `65535` | Specifies the last port that needs to be scanned                                                                |
+| `timeout`     | `-t`  | Integer          | `500`   | Specifies the connection timeout (in milliseconds) before a port is marked as closed                            |
+| `noclosed`    | `-n`  | `true` / `false` | `true`  | Specifies whether closed ports should be outputted or not                                                       |
+| `sort`        | `-o`  | `true` / `false` | `true`  | Specifies whether the output should be sorted by port number or not                                             |
+| `interactive` | `-i`  | `true` / `false` | `false` | Specifies whether the output should be displayed while scanning or whether to wait until the scan has completed |
+
+*Fields marked with an asterisk (\*) are required*
 
 It is important to note that using more threads does not automatically improve performance.
 
@@ -66,6 +68,11 @@ If no start port is provided, `rscan` will simply start from the smallest port n
 Likewise, if no end port is provided, `rscan` will scan from the start port until the largest port number (`65535`):
 ```shell
 ./rscan -h 127.0.0.1 -s 65530
+```
+
+To make use of multi-threading, you can specify the number of threads `rscan` should use by modifying the `threads` argument:
+```shell
+./rscan -h 127.0.0.1 -c 5
 ```
 
 ## Dependencies
