@@ -1,0 +1,16 @@
+[package]
+name = "rscan"
+version = "0.1.0"
+edition = "2021"
+authors = ["CodeDead <admin@codedead.com>"]
+description = "TCP port scanner"
+homepage = "https://codedead.com"
+readme = "README.md"
+repository = "https://github.com/CodeDead/rscan/"
+license-file = "LICENSE"
+keywords = ["CodeDead", "TCP", "port", "IP", "tcpip", "network"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "2.33.3"
