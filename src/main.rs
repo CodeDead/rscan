@@ -1,7 +1,10 @@
-use std::net::ToSocketAddrs;
+use std::net::{Shutdown, ToSocketAddrs};
 use std::net::TcpStream;
 use std::time::Duration;
 use clap::{Arg, App};
+use crate::result::{PortStatus, ScanResult};
+
+mod result;
 
 fn main() {
     let matches = App::new("rscan")
@@ -71,14 +74,50 @@ fn main() {
         end_port = u16::MAX;
     }
 
-    for n in start_port..=end_port {
+    let mut result = scan_range(host, start_port, end_port, timeout);
+    // Sort by port
+    result.sort_by(|a, b| a.port.cmp(&b.port));
+
+    for s in result {
+        match s.port_status {
+            PortStatus::Open => {
+                println!("{}:{} | {}", s.host, s.port, "OPEN");
+            }
+            PortStatus::Closed => {
+                if !no_closed {
+                    println!("{}:{} | {}", s.host, s.port, "CLOSED");
+                }
+            }
+        }
+    }
+}
+
+/// Scan a range of ports for a specified host
+///
+/// # Arguments
+///
+/// * `host` - The host that needs to be scanned
+/// * `start` - The initial port that needs to be scanned
+/// * `end` - The final port that needs to be scanned
+/// * `timeout` - The connection timeout (in milliseconds) before a port is marked as closed
+fn scan_range(host: &str, start: u16, end: u16, timeout: u64) -> Vec<ScanResult> {
+    let mut scan_result = vec![];
+
+    for n in start..=end {
         let mut address = format!("{}:{}", host, n).to_socket_addrs().unwrap();
         let socket_address = address.next().unwrap();
 
-        if let Ok(_stream) = TcpStream::connect_timeout(&socket_address, Duration::from_millis(timeout)) {
-            println!("{}:{} OPEN", host, n);
-        } else if !no_closed {
-            println!("{}:{} CLOSED", host, n);
+        if let Ok(stream) = TcpStream::connect_timeout(&socket_address, Duration::from_millis(timeout)) {
+            scan_result.push(ScanResult::new(host, n, PortStatus::Open));
+            let res = stream.shutdown(Shutdown::Both);
+            match res {
+                Ok(_) => {},
+                Err(e) => {panic!("Unable to shut down TcpStream: {}", e)}
+            }
+        } else {
+            scan_result.push(ScanResult::new(host,n, PortStatus::Closed));
         }
     }
+
+    scan_result
 }
