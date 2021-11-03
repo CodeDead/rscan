@@ -10,7 +10,7 @@ mod result;
 
 fn main() {
     let matches = App::new("rscan")
-        .version("1.0")
+        .version("1.0.1")
         .author("CodeDead <admin@codedead.com>")
         .about("TCP Network scanning utility")
         .arg(Arg::with_name("threads")
