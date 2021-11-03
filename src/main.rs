@@ -10,7 +10,7 @@ mod result;
 
 fn main() {
     let matches = App::new("rscan")
-        .version("1.0")
+        .version("1.0.1")
         .author("CodeDead <admin@codedead.com>")
         .about("TCP Network scanning utility")
         .arg(Arg::with_name("threads")
@@ -75,28 +75,25 @@ fn main() {
     let mut threads: u32 = matches.value_of("threads").unwrap_or("1").parse().expect("Threads is not a valid integer!");
     let start_port: u16 = matches.value_of("startport").unwrap_or("0").parse().expect("Start port is not a valid port number!");
     let end_port: u16 = matches.value_of("endport").unwrap_or("65535").parse().expect("End port is not a valid port number!");
-    let timeout: u64 = matches.value_of("timeout").unwrap_or("500").parse().expect("Timeout is not a valid integer!");
+    let timeout: u64 = matches.value_of("timeout").unwrap_or("250").parse().expect("Timeout is not a valid integer!");
     let no_closed: bool = matches.value_of("noclosed").unwrap_or("false").parse().expect("No closed argument can only be true or false!");
     let sort: bool = matches.value_of("sort").unwrap_or("true").parse().expect("Sort argument can only be true or false!");
     let interactive: bool = matches.value_of("interactive").unwrap_or("false").parse().expect("Interactive argument can only be true or false!");
 
-    if start_port > end_port && end_port != 0 {
+    if start_port > end_port {
         panic!("Start port cannot be bigger than end port!");
     }
 
     let all_results: Arc<Mutex<Vec<ScanResult>>> = Arc::new(Mutex::new(vec![]));
     if threads > 1 {
-        let mut total_ports = end_port - start_port;
-        if total_ports != u16::MAX {
-            total_ports += 1;
+        let total_ports = u32::from(end_port) - u32::from(start_port) + 1;
+
+        if threads > total_ports {
+            threads = total_ports;
         }
 
-        if threads > u32::from(total_ports) {
-            threads = u32::from(total_ports);
-        }
-
-        let range = (u32::from(total_ports) / threads) as u16;
-        let remainder = (u32::from(total_ports) % threads) as u16;
+        let range = (total_ports / threads) as u16;
+        let remainder = (total_ports % threads) as u16;
 
         let mut current_start = start_port;
         let mut current_end = range - 1;
@@ -118,10 +115,20 @@ fn main() {
             });
             handles.push(handle);
 
-            current_start = current_end + 1;
-            current_end += range;
+            if current_end != u16::MAX {
+                current_start = current_end + 1;
+            }
+
+            match current_end.checked_add(range) {
+                Some(v) => { current_end = v; }
+                None => { current_end = u16::MAX; }
+            };
+
             if remainder > 0 && n == threads - 2 {
-                current_end += remainder;
+                match current_end.checked_add(remainder) {
+                    None => { current_end = u16::MAX; }
+                    Some(v) => { current_end = v; }
+                }
             }
         }
 

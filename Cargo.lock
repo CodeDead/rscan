@@ -60,7 +60,7 @@ checksum = "a60553f9a9e039a333b4e9b20573b9e9b9c0bb3a11e201ccc48ef4283456d673"
 
 [[package]]
 name = "rscan"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "clap",
 ]
