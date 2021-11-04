@@ -1,3 +1,4 @@
+use std::io::stdin;
 use std::time::Duration;
 use std::net::{Shutdown, ToSocketAddrs};
 use std::net::TcpStream;
@@ -24,7 +25,6 @@ fn main() {
             .long("host")
             .value_name("HOST")
             .help("Sets the host (or IP address) to scan")
-            .required(true)
             .takes_value(true))
         .arg(Arg::with_name("startport")
             .short("s")
@@ -70,8 +70,7 @@ fn main() {
             .takes_value(true))
         .get_matches();
 
-    let host = matches.value_of("host").expect("Host is a required parameter!");
-    let host_value = String::from(host);
+    let host = matches.value_of("host");
     let mut threads: u32 = matches.value_of("threads").unwrap_or("1").parse().expect("Threads is not a valid integer!");
     let start_port: u16 = matches.value_of("startport").unwrap_or("0").parse().expect("Start port is not a valid port number!");
     let end_port: u16 = matches.value_of("endport").unwrap_or("65535").parse().expect("End port is not a valid port number!");
@@ -79,6 +78,16 @@ fn main() {
     let no_closed: bool = matches.value_of("noclosed").unwrap_or("false").parse().expect("No closed argument can only be true or false!");
     let sort: bool = matches.value_of("sort").unwrap_or("true").parse().expect("Sort argument can only be true or false!");
     let interactive: bool = matches.value_of("interactive").unwrap_or("false").parse().expect("Interactive argument can only be true or false!");
+
+    let host_value = match host {
+        None => {
+            println!("Please enter the host (or IP address) to scan:");
+            let mut data = String::new();
+            stdin().read_line(&mut data).unwrap();
+            data.trim().parse().unwrap()
+        },
+        Some(d) => String::from(d)
+    };
 
     if start_port > end_port {
         panic!("Start port cannot be bigger than end port!");
@@ -136,7 +145,7 @@ fn main() {
             handle.join().unwrap();
         }
     } else {
-        let res = scan_range(host, start_port, end_port, timeout, interactive, no_closed);
+        let res = scan_range(&host_value, start_port, end_port, timeout, interactive, no_closed);
         let mut all = all_results.lock().unwrap();
         for l in res {
             all.push(l);
