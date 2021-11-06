@@ -35,16 +35,16 @@ To run `rscan` from your terminal, issue the following command:
 
 You can specify the following command-line arguments:
 
-| Command       | short | Value            | Default | Description                                                                                                     |
+| Command       | Short | Value            | Default | Description                                                                                                     |
 |---------------|-------|------------------|---------|-----------------------------------------------------------------------------------------------------------------|
 | `threads`     | `-c`  | Integer value    | `1`     | Specifies the number of threads to use                                                                          |
 | `host`*       | `-h`  | String           | `N/A`   | Specifies the host (or IP address) that needs to be scanned                                                     |
 | `startport`   | `-s`  | `0` - `65535`    | `0`     | Specifies the initial port that needs to be scanned                                                             |
 | `endport`     | `-e`  | `0` - `65535`    | `65535` | Specifies the last port that needs to be scanned                                                                |
 | `timeout`     | `-t`  | Integer          | `250`   | Specifies the connection timeout (in milliseconds) before a port is marked as closed                            |
-| `noclosed`    | `-n`  | `true` / `false` | `true`  | Specifies whether closed ports should be outputted or not                                                       |
-| `sort`        | `-o`  | `true` / `false` | `true`  | Specifies whether the output should be sorted by port number or not                                             |
-| `interactive` | `-i`  | `true` / `false` | `false` | Specifies whether the output should be displayed while scanning or whether to wait until the scan has completed |
+| `noclosed`    | `-n`  | N/A              | `true`  | Specifies whether closed ports should be outputted or not                                                       |
+| `unsorted`    | `-u`  | N/A              | `false` | Specifies whether the output should be sorted by port number or not                                             |
+| `interactive` | `-i`  | N/A              | `false` | Specifies whether the output should be displayed while scanning or whether to wait until the scan has completed |
 
 *Fields marked with an asterisk (\*) are required*
 
