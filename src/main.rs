@@ -19,11 +19,11 @@ fn main() {
 
     let all_results: Arc<Mutex<Vec<ScanResult>>> = Arc::new(Mutex::new(vec![]));
 
-    let host = config.host.unwrap();
-    let mut threads = config.threads.unwrap();
-    let start_port = config.start_port.unwrap();
-    let end_port = config.end_port.unwrap();
-    let timeout = config.timeout.unwrap();
+    let host = config.host;
+    let mut threads = config.threads;
+    let start_port = config.start_port;
+    let end_port = config.end_port;
+    let timeout = config.timeout;
     let interactive = config.interactive;
     let no_closed = config.no_closed;
 

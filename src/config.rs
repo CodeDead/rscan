@@ -1,11 +1,12 @@
+use std::io::stdin;
 use clap::{App, Arg};
 
 pub struct Config {
-    pub host: Option<String>,
-    pub start_port: Option<u16>,
-    pub end_port: Option<u16>,
-    pub threads: Option<u32>,
-    pub timeout: Option<u64>,
+    pub host: String,
+    pub start_port: u16,
+    pub end_port: u16,
+    pub threads: u32,
+    pub timeout: u64,
     pub no_closed: bool,
     pub sort: bool,
     pub interactive: bool,
@@ -41,38 +42,18 @@ impl Config {
     /// * `no_closed` - Indicates whether closed ports should be displayed or not
     /// * `sort` - Indicates whether the status of ports should be sorted depending on the port number
     /// * `interactive` - Indicates whether the scan should display results during the scan
-    pub fn new(host: Option<String>, start_port: Option<u16>, end_port: Option<u16>, threads: Option<u32>, timeout: Option<u64>, no_closed: bool, sort: bool, interactive: bool) -> Result<Config, ConfigError> {
-        match &end_port {
-            None => {}
-            Some(end) => {
-                match &start_port {
-                    None => {}
-                    Some(start) => {
-                        if end < start {
-                            return Err(ConfigError::new("End port cannot be smaller than start port!"));
-                        }
-                    }
-                }
-            }
-        };
+    pub fn new(host: String, start_port: u16, end_port: u16, threads: u32, timeout: u64, no_closed: bool, sort: bool, interactive: bool) -> Result<Config, ConfigError> {
+        if end_port < start_port {
+            return Err(ConfigError::new("End port cannot be smaller than start port!"));
+        }
 
-        match &threads {
-            None => {}
-            Some(d) => {
-                if d < &1 {
-                    return Err(ConfigError::new("Threads cannot be smaller than 1!"));
-                }
-            }
-        };
+        if threads < 1 {
+            return Err(ConfigError::new("Threads cannot be smaller than 1!"));
+        }
 
-        match &timeout {
-            None => {}
-            Some(d) => {
-                if d < &1 {
-                    return Err(ConfigError::new("Timeout cannot be smaller than 1!"));
-                }
-            }
-        };
+        if timeout < 1 {
+            return Err(ConfigError::new("Timeout cannot be smaller than 1!"));
+        }
 
         Ok(Config {
             host,
@@ -155,40 +136,37 @@ impl Config {
         let interactive = matches.is_present("interactive");
 
         let host_value = match host {
-            None => None,
-            Some(d) => Some(String::from(d))
+            None => {
+                println!("Please enter the host (or IP address) to scan:");
+                let mut data = String::new();
+                stdin().read_line(&mut data).unwrap();
+                let t: String = data.trim().parse().unwrap();
+                if t.is_empty() {
+                    panic!("Host cannot be empty!")
+                }
+                t
+            },
+            Some(d) => String::from(d)
         };
 
-        let threads_value: Option<u32> = match threads {
-            None => Some(1),
-            Some(d) => {
-                let t: u32 = d.parse().expect("Threads is not a valid integer!");
-                Some(t)
-            }
+        let threads_value: u32 = match threads {
+            None => 1,
+            Some(d) => d.parse().expect("Threads is not a valid integer!")
         };
 
-        let start_port_value: Option<u16> = match start_port {
-            None => Some(0),
-            Some(d) => {
-                let t: u16 = d.parse().expect("Start port is not a valid port number!");
-                Some(t)
-            }
+        let start_port_value: u16 = match start_port {
+            None => 0,
+            Some(d) => d.parse().expect("Start port is not a valid port number!")
         };
 
-        let end_port_value: Option<u16> = match end_port {
-            None => Some(u16::MAX),
-            Some(d) => {
-                let t: u16 = d.parse().expect("End port is not a valid port number!");
-                Some(t)
-            }
+        let end_port_value: u16 = match end_port {
+            None => u16::MAX,
+            Some(d) => d.parse().expect("End port is not a valid port number!")
         };
 
-        let timeout_value: Option<u64> = match timeout {
-            None => Some(250),
-            Some(d) => {
-                let t: u64 = d.parse().expect("Timeout is not a valid integer!");
-                Some(t)
-            }
+        let timeout_value: u64 = match timeout {
+            None => 250,
+            Some(d) => d.parse().expect("Timeout is not a valid integer!")
         };
 
         Config::new(host_value, start_port_value, end_port_value, threads_value, timeout_value, no_closed, sort, interactive)
