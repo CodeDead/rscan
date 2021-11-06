@@ -28,7 +28,7 @@ cargo run
 
 To run `rscan` from your terminal, issue the following command:
 ```shell
-./rscan [OPTIONS]
+./rscan [FLAGS] [OPTIONS]
 ```
 
 ### Arguments
@@ -52,6 +52,11 @@ In terms of performance; when you have specified to use more threads than there 
 that need to be scanned.
 
 ### Example usage
+
+To read the rscan help documentation, you can run:
+```shell
+./rscan --help
+```
 
 If you want to scan only a single port, you could use something like:
 ```shell
