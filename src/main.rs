@@ -19,16 +19,10 @@ fn main() {
 
     let all_results: Arc<Mutex<Vec<ScanResult>>> = Arc::new(Mutex::new(vec![]));
 
-    let host = config.host;
     let mut threads = config.threads;
-    let start_port = config.start_port;
-    let end_port = config.end_port;
-    let timeout = config.timeout;
-    let interactive = config.interactive;
-    let no_closed = config.no_closed;
 
     if threads > 1 {
-        let total_ports = u32::from(end_port) - u32::from(start_port) + 1;
+        let total_ports = u32::from(config.end_port) - u32::from(config.start_port) + 1;
 
         if threads > total_ports {
             threads = total_ports;
@@ -37,18 +31,18 @@ fn main() {
         let range = (total_ports / threads) as u16;
         let remainder = (total_ports % threads) as u16;
 
-        let mut current_start = start_port;
+        let mut current_start = config.start_port;
         let mut current_end = range - 1;
 
         let mut handles = vec![];
         for n in 0..threads {
             let local_start = current_start;
             let local_end = current_end;
-            let local_host = host.clone();
+            let local_host = config.host.clone();
 
             let all_results = Arc::clone(&all_results);
             let handle = thread::spawn(move || {
-                let res = scan_range(&local_host, local_start, local_end, timeout, interactive, no_closed);
+                let res = scan_range(&local_host, local_start, local_end, config.timeout, config.interactive, config.no_closed);
 
                 let mut results = all_results.lock().unwrap();
                 for l in res {
@@ -78,7 +72,7 @@ fn main() {
             handle.join().unwrap();
         }
     } else {
-        let res = scan_range(&host, start_port, end_port, timeout, interactive, no_closed);
+        let res = scan_range(&config.host, config.start_port, config.end_port, config.timeout, config.interactive, config.no_closed);
         let mut all = all_results.lock().unwrap();
         for l in res {
             all.push(l);
@@ -92,7 +86,7 @@ fn main() {
         res.sort_by(|a, b| a.port.cmp(&b.port));
     }
 
-    if !interactive {
+    if !config.interactive {
         for s in res.iter() {
             to_display(&s);
         }
