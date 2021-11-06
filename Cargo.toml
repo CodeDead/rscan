@@ -1,6 +1,6 @@
 [package]
 name = "rscan"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 authors = ["CodeDead <admin@codedead.com>"]
 description = "TCP port scanner"

@@ -74,7 +74,7 @@ impl Config {
     /// Read the `Config` struct using the application arguments
     pub fn read_from_args() -> Result<Config, ConfigError> {
         let matches = App::new("rscan")
-            .version("1.0.1")
+            .version("1.0.2")
             .author("CodeDead <admin@codedead.com>")
             .about("TCP Network scanning utility")
             .arg(Arg::with_name("threads")
