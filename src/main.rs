@@ -32,7 +32,7 @@ fn main() {
         let remainder = (total_ports % threads) as u16;
 
         let mut current_start = config.start_port;
-        let mut current_end = range - 1;
+        let mut current_end = config.start_port + (range - 1);
 
         let mut handles = vec![];
         for n in 0..threads {

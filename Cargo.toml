@@ -17,4 +17,6 @@ clap = "2.33.3"
 
 [profile.release]
 lto = true
-opt-level="s"
+opt-level = "s"
+panic = "abort"
+codegen-units = 1

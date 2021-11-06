@@ -18,6 +18,10 @@ pub struct ConfigError {
 
 impl ConfigError {
     /// Initialize a new `ConfigError`
+    ///
+    /// # Arguments
+    ///
+    /// `message` - The error message
     fn new(message: &str) -> ConfigError {
         if message.is_empty() {
             panic!("Error message cannot be empty!");
@@ -145,22 +149,61 @@ impl Config {
                     panic!("Host cannot be empty!")
                 }
                 t
-            },
+            }
             Some(d) => String::from(d)
         };
 
         let threads_value: u32 = match threads {
-            None => 1,
-            Some(d) => d.parse().expect("Threads is not a valid integer!")
+            None => {
+                println!("Please enter the amount of threads to use (leave empty to use 1 thread):");
+                let mut data = String::new();
+                stdin().read_line(&mut data).unwrap();
+
+                let mut t: u32 = 1;
+                let parsed = data.trim();
+
+                if !parsed.is_empty() {
+                    t = parsed.parse().expect("Input is not a valid integer!");
+                }
+
+                t
+            }
+            Some(d) => d.parse().expect("Input is not a valid integer!")
         };
 
         let start_port_value: u16 = match start_port {
-            None => 0,
+            None => {
+                println!("Please enter the initial port to scan (leave empty to begin from 0):");
+                let mut data = String::new();
+                stdin().read_line(&mut data).unwrap();
+
+                let mut t: u16 = 0;
+                let parsed = data.trim();
+
+                if !parsed.is_empty() {
+                    t = parsed.parse().expect("Input is not a valid port number!");
+                }
+
+                t
+            }
             Some(d) => d.parse().expect("Start port is not a valid port number!")
         };
 
         let end_port_value: u16 = match end_port {
-            None => u16::MAX,
+            None => {
+                println!("Please enter the final port to scan (leave empty to end at 65535):");
+                let mut data = String::new();
+                stdin().read_line(&mut data).unwrap();
+
+                let mut t: u16 = u16::MAX;
+                let parsed = data.trim();
+
+                if !parsed.is_empty() {
+                    t = parsed.parse().expect("Input is not a valid port number!");
+                }
+
+                t
+            }
             Some(d) => d.parse().expect("End port is not a valid port number!")
         };
 

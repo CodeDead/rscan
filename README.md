@@ -53,7 +53,7 @@ that need to be scanned.
 
 ### Example usage
 
-To read the rscan help documentation, you can run:
+To read the help documentation, you can run:
 ```shell
 ./rscan --help
 ```
