@@ -3,90 +3,26 @@ use std::net::{Shutdown, ToSocketAddrs};
 use std::net::TcpStream;
 use std::thread;
 use std::sync::{Arc, Mutex};
-use clap::{Arg, App};
 use crate::result::{PortStatus, ScanResult};
 
 mod result;
+mod config;
 
 fn main() {
-    let matches = App::new("rscan")
-        .version("1.0.1")
-        .author("CodeDead <admin@codedead.com>")
-        .about("TCP Network scanning utility")
-        .arg(Arg::with_name("threads")
-            .short("c")
-            .long("threads")
-            .value_name("COUNT")
-            .help("Sets the number of threads to use")
-            .takes_value(true))
-        .arg(Arg::with_name("host")
-            .short("h")
-            .long("host")
-            .value_name("HOST")
-            .help("Sets the host (or IP address) to scan")
-            .required(true)
-            .takes_value(true))
-        .arg(Arg::with_name("startport")
-            .short("s")
-            .long("start")
-            .value_name("STARTPORT")
-            .help("Sets the initial port that needs to be scanned")
-            .required(false)
-            .takes_value(true))
-        .arg(Arg::with_name("endport")
-            .short("e")
-            .long("end")
-            .value_name("ENDPORT")
-            .help("Sets the last port that needs to be scanned")
-            .required(false)
-            .takes_value(true))
-        .arg(Arg::with_name("timeout")
-            .short("t")
-            .long("timeout")
-            .value_name("TIMEOUT")
-            .help("Sets the connection timeout (in milliseconds) before a port is marked as closed")
-            .required(false)
-            .takes_value(true))
-        .arg(Arg::with_name("noclosed")
-            .short("n")
-            .long("noclosed")
-            .value_name("TRUE|FALSE")
-            .help("Sets whether closed ports should be outputted or not")
-            .required(false)
-            .takes_value(true))
-        .arg(Arg::with_name("sort")
-            .short("o")
-            .long("sort")
-            .value_name("TRUE|FALSE")
-            .help("Sets whether the output should be sorted by port number or not")
-            .required(false)
-            .takes_value(true))
-        .arg(Arg::with_name("interactive")
-            .short("i")
-            .long("interactive")
-            .value_name("TRUE|FALSE")
-            .help("Sets whether the output should be displayed while scanning or whether to wait until the scan has completed")
-            .required(false)
-            .takes_value(true))
-        .get_matches();
-
-    let host = matches.value_of("host").expect("Host is a required parameter!");
-    let host_value = String::from(host);
-    let mut threads: u32 = matches.value_of("threads").unwrap_or("1").parse().expect("Threads is not a valid integer!");
-    let start_port: u16 = matches.value_of("startport").unwrap_or("0").parse().expect("Start port is not a valid port number!");
-    let end_port: u16 = matches.value_of("endport").unwrap_or("65535").parse().expect("End port is not a valid port number!");
-    let timeout: u64 = matches.value_of("timeout").unwrap_or("250").parse().expect("Timeout is not a valid integer!");
-    let no_closed: bool = matches.value_of("noclosed").unwrap_or("false").parse().expect("No closed argument can only be true or false!");
-    let sort: bool = matches.value_of("sort").unwrap_or("true").parse().expect("Sort argument can only be true or false!");
-    let interactive: bool = matches.value_of("interactive").unwrap_or("false").parse().expect("Interactive argument can only be true or false!");
-
-    if start_port > end_port {
-        panic!("Start port cannot be bigger than end port!");
-    }
+    let optional_config = crate::config::Config::read_from_args();
+    let config = match optional_config {
+        Ok(d) => d,
+        Err(e) => {
+            panic!("{}", e.message);
+        }
+    };
 
     let all_results: Arc<Mutex<Vec<ScanResult>>> = Arc::new(Mutex::new(vec![]));
+
+    let mut threads = config.threads;
+
     if threads > 1 {
-        let total_ports = u32::from(end_port) - u32::from(start_port) + 1;
+        let total_ports = u32::from(config.end_port) - u32::from(config.start_port) + 1;
 
         if threads > total_ports {
             threads = total_ports;
@@ -95,18 +31,18 @@ fn main() {
         let range = (total_ports / threads) as u16;
         let remainder = (total_ports % threads) as u16;
 
-        let mut current_start = start_port;
-        let mut current_end = range - 1;
+        let mut current_start = config.start_port;
+        let mut current_end = config.start_port + (range - 1);
 
         let mut handles = vec![];
         for n in 0..threads {
             let local_start = current_start;
             let local_end = current_end;
-            let local_host = host_value.clone();
+            let local_host = config.host.clone();
 
             let all_results = Arc::clone(&all_results);
             let handle = thread::spawn(move || {
-                let res = scan_range(&local_host, local_start, local_end, timeout, interactive, no_closed);
+                let res = scan_range(&local_host, local_start, local_end, config.timeout, config.interactive, config.no_closed);
 
                 let mut results = all_results.lock().unwrap();
                 for l in res {
@@ -136,7 +72,7 @@ fn main() {
             handle.join().unwrap();
         }
     } else {
-        let res = scan_range(host, start_port, end_port, timeout, interactive, no_closed);
+        let res = scan_range(&config.host, config.start_port, config.end_port, config.timeout, config.interactive, config.no_closed);
         let mut all = all_results.lock().unwrap();
         for l in res {
             all.push(l);
@@ -145,12 +81,12 @@ fn main() {
 
     let mut res = all_results.lock().unwrap();
 
-    if sort {
+    if config.sort {
         // Sort by port number
         res.sort_by(|a, b| a.port.cmp(&b.port));
     }
 
-    if !interactive {
+    if !config.interactive {
         for s in res.iter() {
             to_display(&s);
         }
